@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'componentes/login.dart';
 import 'componentes/registro.dart';
+import 'componentes/bienvenida.dart';
 
 void main() {
   runApp(const TransQuimApp());
@@ -16,9 +17,24 @@ class TransQuimApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.indigo,
+        scaffoldBackgroundColor: Colors.white,
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.indigo,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            textStyle: const TextStyle(fontSize: 16),
+          ),
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          border: OutlineInputBorder(),
+        ),
       ),
-      initialRoute: '/login',
+      initialRoute: '/',
       routes: {
+        '/': (context) => const BienvenidaPage(),
         '/login': (context) => const LoginPage(),
         '/registro': (context) => const RegistroPage(),
       },
