@@ -129,7 +129,9 @@ class _RegistroPageState extends State<RegistroPage> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: registrar,
+                      onPressed: (){
+                        Navigator.pushNamed(context, '/checklist');
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         padding: const EdgeInsets.symmetric(
