@@ -102,7 +102,9 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton(
-                      onPressed: login,
+                      onPressed: (){
+                        Navigator.pushNamed(context, '/checklist');
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         padding: const EdgeInsets.symmetric(

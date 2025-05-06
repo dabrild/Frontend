@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'componentes/checklist.dart';
 import 'componentes/login.dart';
 import 'componentes/registro.dart';
 import 'componentes/bienvenida.dart';
@@ -37,6 +38,7 @@ class TransQuimApp extends StatelessWidget {
         '/': (context) => const BienvenidaPage(),
         '/login': (context) => const LoginPage(),
         '/registro': (context) => const RegistroPage(),
+        '/checklist': (context) => const ChecklistPage(),
       },
     );
   }
