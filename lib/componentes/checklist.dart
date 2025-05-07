@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ChecklistPage extends StatefulWidget {
   const ChecklistPage({super.key});
@@ -14,13 +16,14 @@ class ChecklistPageState extends State<ChecklistPage> {
     'Elementos de protección personal',
     'Documentación mercancías peligrosas vigente',
     'Certificación manejo de incendios',
-    'Carga transportada',
-    'Tipo de químico: Cloroformo',
-    'Cantidad: 200 L',
+    'Tipo de químico',
+    'Cantidad de químico',
     'Manifiestos de carga',
     'SOAT',
     'Tecnomecánica',
     'Seguro',
+    'Tipo de carga',
+    'Tipo de vehículo',
     'Licencia',
   ];
 
@@ -30,6 +33,51 @@ class ChecklistPageState extends State<ChecklistPage> {
   void initState() {
     super.initState();
     checked = List.filled(items.length, false);
+  }
+
+  Future<void> enviarChecklist() async {
+    final url = Uri.parse('http://192.168.142.129:8862/Checklist/');
+
+    final Map<String, dynamic> data = {
+      'licencia': 12345678,
+      'manualFugasDerrames': checked[0] ? 'Sí' : 'No',
+      'botiquinPrimerosAuxilios': checked[1] ? 'Sí' : 'No',
+      'elementosProteccionPersonal': checked[2] ? 'Sí' : 'No',
+      'documentacionVigenteMercanciasPeligrosas': checked[3] ? 'Sí' : 'No',
+      'certificacionManejoIncendios': checked[4] ? 'Sí' : 'No',
+      'tipoQuimico': checked[5] ? 'Cloroformo' : 'Otro',
+      'cantidadQuimico': checked[6] ? 200 : 0,
+      'manifiestosCarga': checked[7] ? 'Sí' : 'No',
+      'soat': checked[8] ?  'Sí' : 'No',
+      'tecnomecanica': checked[9] ? 'Sí' : 'No',
+      'seguro': checked[10] ? 'Sí' : 'No',
+      'tipoCarga': checked[11] ? 'Carga peligrosa' : 'Otra',
+      'tipoVehiculo': checked[12] ? 'Camión' : 'Otro',
+    };
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      Navigator.pushReplacementNamed(context, '/bienvenida');
+    } else {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Error al enviar checklist: ${response.statusCode}'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            )
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -76,6 +124,7 @@ class ChecklistPageState extends State<ChecklistPage> {
                 ),
                 child: ListView.builder(
                   shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     return CheckboxListTile(
@@ -93,9 +142,7 @@ class ChecklistPageState extends State<ChecklistPage> {
               ),
               const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/bienvenida');
-                },
+                onPressed: enviarChecklist,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                   padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
@@ -133,4 +180,3 @@ class ChecklistPageState extends State<ChecklistPage> {
     );
   }
 }
-
