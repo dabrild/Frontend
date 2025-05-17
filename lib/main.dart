@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_transquim/componentes/listarvehiculo.dart';
-import 'componentes/checklist.dart';
-import 'componentes/login.dart';
-import 'componentes/registro.dart';
-import 'componentes/bienvenida.dart';
+import 'package:frontend_transquim/componentes/checklist.dart';
+import 'package:frontend_transquim/componentes/login.dart';
+import 'package:frontend_transquim/componentes/registro.dart';
+import 'package:frontend_transquim/componentes/bienvenida.dart';
+import 'package:frontend_transquim/componentes/menu.dart';
+//import 'package:frontend_transquim/componentes/registrovehiculo.dart';
+//import 'package:frontend_transquim/componentes/iniciartransporte.dart';
 
 void main() {
   runApp(const TransQuimApp());
@@ -40,7 +43,10 @@ class TransQuimApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/registro': (context) => const RegistroPage(),
         '/checklist': (context) => const ChecklistPage(),
-        '/listarvehiculo': (context) =>  ListarVehiculosPage(),
+        '/listarvehiculo': (context) => ListarVehiculosPage(),
+        '/menu': (context) => const MenuPage(),
+        //'/registrovehiculo': (context) => const RegistroVehiculoPage(),
+        //'/iniciartransporte': (context) => const IniciarTransportePage(),
       },
     );
   }
