@@ -5,7 +5,7 @@ import 'package:frontend_transquim/componentes/login.dart';
 import 'package:frontend_transquim/componentes/registro.dart';
 import 'package:frontend_transquim/componentes/bienvenida.dart';
 import 'package:frontend_transquim/componentes/menu.dart';
-//import 'package:frontend_transquim/componentes/registrovehiculo.dart';
+import 'package:frontend_transquim/componentes/registrovehiculo.dart';
 //import 'package:frontend_transquim/componentes/iniciartransporte.dart';
 
 void main() {
@@ -45,7 +45,7 @@ class TransQuimApp extends StatelessWidget {
         '/checklist': (context) => const ChecklistPage(),
         '/listarvehiculo': (context) => ListarVehiculosPage(),
         '/menu': (context) => const MenuPage(),
-        //'/registrovehiculo': (context) => const RegistroVehiculoPage(),
+        '/registrovehiculo': (context) => const RegistrarVehiculoPage(),
         //'/iniciartransporte': (context) => const IniciarTransportePage(),
       },
     );
