@@ -14,7 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final claveController = TextEditingController();
 
   Future<void> login() async {
-    final url = Uri.parse('http://192.168.1.7:8862/conductores/autenticar');
+    final url = Uri.parse('http://192.168.56.1:8862/conductores/autenticar');
 
     final response = await http.post(
       url,
@@ -27,9 +27,12 @@ class _LoginPageState extends State<LoginPage> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Bienvenido ${data['nombre']}')),
       );
+
+      Navigator.pushReplacementNamed(context, '/menu');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Credenciales inválidas')),
@@ -102,9 +105,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton(
-                      onPressed: (){
-                        Navigator.pushNamed(context, '/listarvehiculo');
-                      },
+                      onPressed: login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         padding: const EdgeInsets.symmetric(

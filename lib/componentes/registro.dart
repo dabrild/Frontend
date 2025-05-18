@@ -17,7 +17,7 @@ class _RegistroPageState extends State<RegistroPage> {
   final claveController = TextEditingController();
 
   Future<void> registrar() async {
-    final url = Uri.parse('http://192.168.1.7:8862/conductores/');
+    final url = Uri.parse('http://192.168.56.1:8862/conductores/');
 
     final response = await http.post(
       url,
@@ -36,7 +36,7 @@ class _RegistroPageState extends State<RegistroPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Registro exitoso')),
       );
-      Navigator.pop(context);
+      Navigator.pop(context); // Vuelve al login
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error en el registro')),
@@ -129,9 +129,7 @@ class _RegistroPageState extends State<RegistroPage> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: (){
-                        Navigator.pushNamed(context, '/listarvehiculo');
-                      },
+                      onPressed: registrar, // ✅ Este es el cambio importante
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         padding: const EdgeInsets.symmetric(
@@ -153,7 +151,7 @@ class _RegistroPageState extends State<RegistroPage> {
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context);
+                        Navigator.pop(context); // Volver a login
                       },
                       child: const Text('¿Ya tienes cuenta? Inicia sesión'),
                     ),
