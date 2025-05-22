@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class RegistrarVehiculoPage extends StatefulWidget {
   const RegistrarVehiculoPage({super.key});
@@ -14,7 +16,7 @@ class _RegistrarVehiculoPageState extends State<RegistrarVehiculoPage> {
   final colorController = TextEditingController();
   final tipoCargaController = TextEditingController();
 
-  void registrarVehiculo() {
+  void registrarVehiculo() async {
     final licencia = licenciaController.text.trim();
     final placa = placaController.text.trim();
     final marca = marcaController.text.trim();
@@ -32,13 +34,34 @@ class _RegistrarVehiculoPageState extends State<RegistrarVehiculoPage> {
       return;
     }
 
-    // Aquí iría la lógica para enviar los datos al backend
+    final url = Uri.parse('http://192.168.1.6:8862/vehiculos/'); // Cambia según tu IP/backend
+    final headers = {'Content-Type': 'application/json'};
+    final body = json.encode({
+      "licenciaTransito": licencia,
+      "placa": placa,
+      "marca": marca,
+      "color": color,
+      "estado": "Disponible", // Se puede dejar por defecto
+      "tipoCarga": tipoCarga,
+    });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Vehículo registrado exitosamente')),
-    );
-
-    Navigator.pop(context); // Regresa al menú principal
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vehículo registrado exitosamente')),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al registrar vehículo: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error de red: $e')),
+      );
+    }
   }
 
   @override
