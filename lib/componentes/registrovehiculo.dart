@@ -34,7 +34,7 @@ class _RegistrarVehiculoPageState extends State<RegistrarVehiculoPage> {
       return;
     }
 
-    final url = Uri.parse('http://192.168.1.6:8862/vehiculos/'); // Cambia según tu IP/backend
+    final url = Uri.parse('http://192.168.0.12:8862/vehiculos/'); // Cambia según tu IP/backend
     final headers = {'Content-Type': 'application/json'};
     final body = json.encode({
       "licenciaTransito": licencia,

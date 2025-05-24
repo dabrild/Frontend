@@ -10,8 +10,10 @@ class ListarVehiculosPage extends StatefulWidget {
 }
 
 class _ListarVehiculosPageState extends State<ListarVehiculosPage> {
+  Map<String, dynamic>? _vehiculoSeleccionado;
+
   Future<List<Map<String, dynamic>>> fetchVehiculos() async {
-    final response = await http.get(Uri.parse('http://192.168.1.6:8862/vehiculos/listar'));
+    final response = await http.get(Uri.parse('http://192.168.0.12:8862/vehiculos/listar'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
@@ -28,6 +30,16 @@ class _ListarVehiculosPageState extends State<ListarVehiculosPage> {
         title: const Text('Vehículos Registrados'),
         backgroundColor: const Color(0xFF0B3D91),
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/menu',
+                  (route) => false,
+            );
+          },
+        ),
       ),
       backgroundColor: const Color(0xFF0B3D91),
       body: SafeArea(
@@ -56,7 +68,13 @@ class _ListarVehiculosPageState extends State<ListarVehiculosPage> {
               itemCount: vehiculos.length,
               itemBuilder: (context, index) {
                 final v = vehiculos[index];
-                final esDisponible = (v['estado']?.toLowerCase() == 'bueno');
+                final esDisponible = (v['estado']?.toLowerCase() == 'disponible');
+                final esteVehiculoSeleccionado = _vehiculoSeleccionado != null &&
+                    _vehiculoSeleccionado!['licenciaTransito'] == v['licenciaTransito'];
+
+                // Determinar si este vehículo debe estar deshabilitado
+                final hayVehiculoSeleccionado = _vehiculoSeleccionado != null;
+                final vehiculoDeshabilitado = hayVehiculoSeleccionado && !esteVehiculoSeleccionado;
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -64,49 +82,130 @@ class _ListarVehiculosPageState extends State<ListarVehiculosPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Licencia: ${v['licenciaTransito'] ?? ''}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text('Placa: ${v['placa'] ?? ''}'),
-                        Text('Marca: ${v['marca'] ?? ''}'),
-                        Text('Color: ${v['color'] ?? ''}'),
-                        Text(
-                          'Tipo de Carga: ${v['tipoCarga'] ?? ''}',
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Estado: ${v['estado'] ?? ''}',
-                          style: TextStyle(
-                            color: esDisponible ? Colors.green : Colors.orange,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton(
-                            onPressed: esDisponible ? () {
-                              // aquí podrías guardar la selección o navegar
-                            } : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              disabledBackgroundColor: Colors.grey.shade300,
-                              foregroundColor: Colors.white,
+                  // Cambiar color de fondo según el estado
+                  color: esteVehiculoSeleccionado
+                      ? Colors.grey.shade300
+                      : vehiculoDeshabilitado
+                      ? Colors.grey.shade100
+                      : Colors.white,
+                  child: Opacity(
+                    // Reducir opacidad de vehículos deshabilitados
+                    opacity: vehiculoDeshabilitado ? 0.5 : 1.0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Licencia: ${v['licenciaTransito'] ?? ''}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: vehiculoDeshabilitado ? Colors.grey : Colors.black,
                             ),
-                            child: const Text('Seleccionar'),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text(
+                            'Placa: ${v['placa'] ?? ''}',
+                            style: TextStyle(
+                              color: vehiculoDeshabilitado ? Colors.grey : Colors.black,
+                            ),
+                          ),
+                          Text(
+                            'Marca: ${v['marca'] ?? ''}',
+                            style: TextStyle(
+                              color: vehiculoDeshabilitado ? Colors.grey : Colors.black,
+                            ),
+                          ),
+                          Text(
+                            'Color: ${v['color'] ?? ''}',
+                            style: TextStyle(
+                              color: vehiculoDeshabilitado ? Colors.grey : Colors.black,
+                            ),
+                          ),
+                          Text(
+                            'Tipo de Carga: ${v['tipoCarga'] ?? ''}',
+                            style: TextStyle(
+                              color: vehiculoDeshabilitado ? Colors.grey : Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            // Si está seleccionado, mostrar "No disponible", sino el estado original
+                            'Estado: ${esteVehiculoSeleccionado ? 'No disponible' : (v['estado'] ?? '')}',
+                            style: TextStyle(
+                              // Si está seleccionado, color rojo, sino el color según disponibilidad
+                              color: esteVehiculoSeleccionado
+                                  ? Colors.red
+                                  : vehiculoDeshabilitado
+                                  ? Colors.grey
+                                  : (esDisponible ? Colors.green : Colors.orange),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: esteVehiculoSeleccionado
+                                ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _vehiculoSeleccionado = null;
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Selección cancelada'),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Cancelar'),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Seleccionado ✓'),
+                                ),
+                              ],
+                            )
+                                : ElevatedButton(
+                              onPressed: (esDisponible && !vehiculoDeshabilitado)
+                                  ? () {
+                                setState(() {
+                                  _vehiculoSeleccionado = v;
+                                });
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Vehículo seleccionado'),
+                                  ),
+                                );
+                              }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                disabledBackgroundColor: Colors.grey.shade300,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: Text(
+                                  vehiculoDeshabilitado
+                                      ? 'No disponible'
+                                      : 'Seleccionar'
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -121,12 +220,17 @@ class _ListarVehiculosPageState extends State<ListarVehiculosPage> {
           children: [
             Expanded(
               child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/menu',
+                        (route) => false,
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
-                  padding:
-                  const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
@@ -137,13 +241,19 @@ class _ListarVehiculosPageState extends State<ListarVehiculosPage> {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/checklist'),
+                onPressed: _vehiculoSeleccionado == null
+                    ? null
+                    : () {
+                  Navigator.pushReplacementNamed(
+                    context,
+                    '/checklist',
+                    arguments: _vehiculoSeleccionado,
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFFA500),
                   foregroundColor: Colors.white,
-                  padding:
-                  const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
@@ -157,4 +267,3 @@ class _ListarVehiculosPageState extends State<ListarVehiculosPage> {
     );
   }
 }
-

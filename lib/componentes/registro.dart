@@ -17,7 +17,7 @@ class _RegistroPageState extends State<RegistroPage> {
   final claveController = TextEditingController();
 
   Future<void> registrar() async {
-    final url = Uri.parse('http://192.168.1.6:8862/conductores/');
+    final url = Uri.parse('http://192.168.0.12:8862/conductores/');
 
     final response = await http.post(
       url,

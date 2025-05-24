@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// Agregar solo esta línea al inicio del archivo
+import 'OrdenTrabajo.dart'; // Ajusta la ruta según donde tengas el archivo
 
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
@@ -7,9 +9,15 @@ class MenuPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Menú Principal'),
+        title: const Text(
+          'Menú Principal',
+          style: TextStyle(
+            color: Colors.white, // Texto blanco explícitamente
+          ),
+        ),
         backgroundColor: const Color(0xFF0B3D91),
         automaticallyImplyLeading: false,
+        iconTheme: const IconThemeData(color: Colors.white), // Asegura íconos blancos también
       ),
       backgroundColor: const Color(0xFFF5F5F5),
       body: Padding(
@@ -44,7 +52,11 @@ class MenuPage extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.pushNamed(context, '/iniciartransporte');
+                // ÚNICO CAMBIO: Reemplazar esta línea
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const OrdenTrabajoPage()),
+                );
               },
               icon: const Icon(Icons.local_shipping),
               label: const Text('Iniciar Transporte'),
