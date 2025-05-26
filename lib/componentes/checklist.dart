@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ChecklistPage extends StatefulWidget {
   const ChecklistPage({super.key});
@@ -8,32 +10,161 @@ class ChecklistPage extends StatefulWidget {
 }
 
 class ChecklistPageState extends State<ChecklistPage> {
-  final List<String> items = [
+  late List<bool> checked;
+  Map<String, dynamic>? vehiculoSeleccionado;
+
+  // Items base del checklist
+  final List<String> itemsBase = [
     'Manual de fugas y derrames',
     'Botiquín de primeros auxilios',
     'Elementos de protección personal',
     'Documentación mercancías peligrosas vigente',
     'Certificación manejo de incendios',
-    'Carga transportada',
-    'Tipo de químico: Cloroformo',
-    'Cantidad: 200 L',
-    'Manifiestos de carga',
     'SOAT',
     'Tecnomecánica',
     'Seguro',
     'Licencia',
+    'Manifiestos de carga',
   ];
 
-  late List<bool> checked;
+  List<String> getItemsCompletos() {
+    List<String> items = List.from(itemsBase);
+
+    if (vehiculoSeleccionado != null) {
+      // Agregar información específica del vehículo
+      items.add('Carga transportada: ${vehiculoSeleccionado!['tipoCarga']}');
+
+      // Agregar verificaciones específicas según el tipo de carga
+      String tipoCarga = vehiculoSeleccionado!['tipoCarga']?.toLowerCase() ?? '';
+
+      if (tipoCarga.contains('quimico') || tipoCarga.contains('agua')) {
+        items.add('Verificación de contenedores sellados');
+        items.add('Etiquetas de identificación del químico');
+        items.add('Equipo de contención de derrames');
+      }
+
+      if (tipoCarga.contains('combustible') || tipoCarga.contains('gasolina')) {
+        items.add('Verificación de tanques sin fugas');
+        items.add('Equipo contra incendios especializado');
+        items.add('Señalización de material inflamable');
+      }
+    }
+
+    return items;
+  }
 
   @override
   void initState() {
     super.initState();
-    checked = List.filled(items.length, false);
+    // La inicialización del checked se hará en didChangeDependencies
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Obtener el vehículo seleccionado una sola vez
+    if (vehiculoSeleccionado == null) {
+      vehiculoSeleccionado = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+
+      // Inicializar la lista de checked después de obtener el vehículo
+      List<String> items = getItemsCompletos();
+      checked = List.filled(items.length, false);
+    }
+  }
+
+  bool todosLosItemsCheckeados() {
+    return checked.every((item) => item == true);
+  }
+
+  void mostrarDialogoConfirmacion() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar Checklist'),
+          content: Text(
+              todosLosItemsCheckeados()
+                  ? 'Todos los elementos han sido verificados. ¿Desea confirmar el checklist?'
+                  : 'Aún hay elementos sin verificar. ¿Está seguro de continuar?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Aquí podrías enviar los datos al backend
+                confirmarChecklist();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+              ),
+              child: const Text('Confirmar', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void confirmarChecklist() async {
+    // Construcción del DTO con base en los datos actuales
+    final Map<String, dynamic> checklistDto = {
+      "licencia": vehiculoSeleccionado!['licenciaTransito'],
+      "manualFugasDerrames": checked[0],
+      "botiquinPrimerosAuxilios": checked[1],
+      "elementosProteccionPersonal": checked[2],
+      "documentacionVigenteMercanciasPeligrosas": checked[3],
+      "certificacionManejoIncendios": checked[4],
+      "manifiestosCarga": checked[5],
+      "soat": checked[6],
+      "tecnomecanica": checked[7],
+      "seguro": checked[8],
+      "tipoQuimico": vehiculoSeleccionado!['tipoQuimico'], // debes tener este dato
+      "cantidadQuimico": vehiculoSeleccionado!['cantidadQuimico'], // también este
+      "tipoCarga": vehiculoSeleccionado!['tipoCarga'],
+      "tipoVehiculo": vehiculoSeleccionado!['tipoVehiculo'],
+    };
+
+    // 🔍 Imprimir en consola
+    print('Checklist a enviar: $checklistDto');
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://192.168.0.12:8862/checklist/crear'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(checklistDto),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Checklist confirmado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushNamedAndRemoveUntil(context, '/menu', (route) => false);
+      } else {
+        throw Exception('Error al guardar checklist: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error al guardar checklist: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al confirmar checklist'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    List<String> items = getItemsCompletos();
+
     return Scaffold(
       backgroundColor: const Color(0xFF0B3D91),
       body: SafeArea(
@@ -42,7 +173,7 @@ class ChecklistPageState extends State<ChecklistPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 20),
               const Text(
                 'CHECKLIST',
                 style: TextStyle(
@@ -60,7 +191,109 @@ class ChecklistPageState extends State<ChecklistPage> {
                   fontSize: 16,
                 ),
               ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 30),
+
+              // Información del vehículo seleccionado
+              if (vehiculoSeleccionado != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Vehículo Seleccionado',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Placa:',
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          Text(
+                            '${vehiculoSeleccionado!['placa']}',
+                            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Marca:',
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          Text(
+                            '${vehiculoSeleccionado!['marca']}',
+                            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Tipo de Carga:',
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          Text(
+                            '${vehiculoSeleccionado!['tipoCarga']}',
+                            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Licencia:',
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          Text(
+                            '${vehiculoSeleccionado!['licenciaTransito']}',
+                            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 30),
+              ],
+
+              // Indicador de progreso
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Completado: ${checked.where((item) => item).length}/${items.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Lista de checklist
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -76,47 +309,92 @@ class ChecklistPageState extends State<ChecklistPage> {
                 ),
                 child: ListView.builder(
                   shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: items.length,
                   itemBuilder: (context, index) {
-                    return CheckboxListTile(
-                      title: Text(items[index]),
-                      value: checked[index],
-                      onChanged: (value) {
-                        setState(() {
-                          checked[index] = value ?? false;
-                        });
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: checked[index] ? Colors.green.withOpacity(0.1) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: checked[index] ? Colors.green.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+                        ),
+                      ),
+                      child: CheckboxListTile(
+                        title: Text(
+                          items[index],
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: checked[index] ? Colors.green.shade700 : Colors.black87,
+                            fontWeight: checked[index] ? FontWeight.w500 : FontWeight.normal,
+                          ),
+                        ),
+                        value: checked[index],
+                        onChanged: (value) {
+                          setState(() {
+                            checked[index] = value ?? false;
+                          });
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                        activeColor: Colors.green,
+                        checkColor: Colors.white,
+                      ),
                     );
                   },
                 ),
               ),
               const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/bienvenida');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+
+              // Botones de acción
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/menu',
+                              (route) => false,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'CANCELAR',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'CONFIRMAR',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: mostrarDialogoConfirmacion,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: todosLosItemsCheckeados() ? Colors.green : Colors.orange,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        todosLosItemsCheckeados() ? 'COMPLETADO' : 'CONFIRMAR',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/login');
-                },
-                child: const Text('Volver al inicio'),
+                ],
               ),
               const SizedBox(height: 30),
               const Text(
@@ -133,4 +411,3 @@ class ChecklistPageState extends State<ChecklistPage> {
     );
   }
 }
-

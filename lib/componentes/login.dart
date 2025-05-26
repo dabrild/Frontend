@@ -14,7 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final claveController = TextEditingController();
 
   Future<void> login() async {
-    final url = Uri.parse('http://192.168.1.6:8862/conductores/autenticar');
+    final url = Uri.parse('http://192.168.0.12:8862/conductores/autenticar');
 
     final response = await http.post(
       url,

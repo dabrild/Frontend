@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter/services.dart';
+
 
 class RegistrarVehiculoPage extends StatefulWidget {
   const RegistrarVehiculoPage({super.key});
@@ -34,7 +36,7 @@ class _RegistrarVehiculoPageState extends State<RegistrarVehiculoPage> {
       return;
     }
 
-    final url = Uri.parse('http://192.168.1.6:8862/vehiculos/'); // Cambia según tu IP/backend
+    final url = Uri.parse('http://192.168.0.12:8862/vehiculos/'); // Cambia según tu IP/backend
     final headers = {'Content-Type': 'application/json'};
     final body = json.encode({
       "licenciaTransito": licencia,
@@ -99,6 +101,10 @@ class _RegistrarVehiculoPageState extends State<RegistrarVehiculoPage> {
                     labelText: 'Licencia de Tránsito',
                     prefixIcon: Icon(Icons.drive_file_rename_outline),
                   ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
                 ),
                 const SizedBox(height: 16),
                 TextField(
