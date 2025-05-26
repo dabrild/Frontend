@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ChecklistPage extends StatefulWidget {
   const ChecklistPage({super.key});
@@ -108,16 +110,55 @@ class ChecklistPageState extends State<ChecklistPage> {
     );
   }
 
-  void confirmarChecklist() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Checklist confirmado exitosamente'),
-        backgroundColor: Colors.green,
-      ),
-    );
+  void confirmarChecklist() async {
+    // Construcción del DTO con base en los datos actuales
+    final Map<String, dynamic> checklistDto = {
+      "licencia": vehiculoSeleccionado!['licenciaTransito'],
+      "manualFugasDerrames": checked[0],
+      "botiquinPrimerosAuxilios": checked[1],
+      "elementosProteccionPersonal": checked[2],
+      "documentacionVigenteMercanciasPeligrosas": checked[3],
+      "certificacionManejoIncendios": checked[4],
+      "manifiestosCarga": checked[5],
+      "soat": checked[6],
+      "tecnomecanica": checked[7],
+      "seguro": checked[8],
+      "tipoQuimico": vehiculoSeleccionado!['tipoQuimico'], // debes tener este dato
+      "cantidadQuimico": vehiculoSeleccionado!['cantidadQuimico'], // también este
+      "tipoCarga": vehiculoSeleccionado!['tipoCarga'],
+      "tipoVehiculo": vehiculoSeleccionado!['tipoVehiculo'],
+    };
 
-    // Ir al menú principal
-    Navigator.pushNamedAndRemoveUntil(context, '/menu', (route) => false);
+    // 🔍 Imprimir en consola
+    print('Checklist a enviar: $checklistDto');
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://192.168.0.12:8862/checklist/crear'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(checklistDto),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Checklist confirmado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushNamedAndRemoveUntil(context, '/menu', (route) => false);
+      } else {
+        throw Exception('Error al guardar checklist: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error al guardar checklist: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al confirmar checklist'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
